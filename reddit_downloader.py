@@ -1,3 +1,5 @@
+# Note: praw is limited to 1k posts. For more, use https://github.com/mattpodolak/pmaw
+
 import argparse
 import json
 import os
@@ -95,8 +97,7 @@ def main():
 
                 if args.include_comments:
                     comments = []
-                    # for comment in post.comments.list():
-                    for comment in list(post.comments):
+                    for comment in post.comments.list():
                         comment_data = {
                             "body": comment.body,
                             "body_html": comment.body_html,
