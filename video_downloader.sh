@@ -21,11 +21,17 @@ done
 
 mkdir -p $out_dir
 while read line; do
-  echo "$line"
-  $line
+  id=$(echo "$line" | cut -f 1 -d $'\t')
+  url=$(echo "$line" | cut -f 2 -d $'\t')
+  out_path="${out_dir}/${id}.mp4"
+  if [ ! -f "$out_path" ]; then
+      cmd="wget -q -O ${out_path} ${url}"
+      echo "$cmd"
+      eval "$cmd"
+  fi
 done <<< $(cat $in_file \
     | jq -c 'select(.id)' \
     | jq -c 'select(.media.reddit_video.fallback_url)' \
-    | jq -c '{id:.id, url:.media.reddit_video.fallback_url}' \
-    | jq -r "\"wget -q -O ${out_dir}/\\(.id).mp4 \\(.url)\""
+    | jq -c '[.id, .media.reddit_video.fallback_url]' \
+    | jq -cr '@tsv'
 )
