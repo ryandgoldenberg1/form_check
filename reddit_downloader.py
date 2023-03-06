@@ -39,6 +39,29 @@ def get_author_id(x):
             return ""
 
 
+def extract_comment_data(comment, include_author=False):
+    comment_data = {
+        "body": comment.body,
+        "body_html": comment.body_html,
+        "created_utc": comment.created_utc,
+        "distinguished": comment.distinguished,
+        "downs": comment.downs,
+        "edited": comment.edited,
+        "id": comment.id,
+        "link_id": comment.link_id,
+        "name": comment.name,
+        "num_reports": comment.num_reports,
+        "parent_id": comment.parent_id,
+        "permalink": comment.permalink,
+        "score": comment.score,
+        "subreddit_id": comment.subreddit_id,
+        "ups": comment.ups,
+    }
+    if include_author:
+        comment_data["author"] = get_author_id(comment)
+    return comment_data
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("output_path")
@@ -46,6 +69,7 @@ def main():
     parser.add_argument("--overwrite", default=False, action="store_true")
     parser.add_argument("--include_author", default=False, action="store_true")
     parser.add_argument("--include_comments", default=False, action="store_true")
+    parser.add_argument("--time_filter", default="all", choices=["all", "day", "hour", "month", "week", "year"])
     args = parser.parse_args()
     print(args)
 
@@ -64,7 +88,7 @@ def main():
     print("Warmup complete")
 
     with open(args.output_path, "w") as f:
-        for post in tqdm(subreddit.top(limit=args.limit), total=(args.limit or float("inf"))):
+        for post in tqdm(subreddit.top(limit=args.limit, time_filter=args.time_filter), total=(args.limit or float("inf"))):
             if post.is_video:
                 post_data = {
                     "created_utc": post.created_utc,
@@ -98,25 +122,7 @@ def main():
                 if args.include_comments:
                     comments = []
                     for comment in post.comments.list():
-                        comment_data = {
-                            "body": comment.body,
-                            "body_html": comment.body_html,
-                            "created_utc": comment.created_utc,
-                            "distinguished": comment.distinguished,
-                            "downs": comment.downs,
-                            "edited": comment.edited,
-                            "id": comment.id,
-                            "link_id": comment.link_id,
-                            "name": comment.name,
-                            "num_reports": comment.num_reports,
-                            "parent_id": comment.parent_id,
-                            "permalink": comment.permalink,
-                            "score": comment.score,
-                            "subreddit_id": comment.subreddit_id,
-                            "ups": comment.ups,
-                        }
-                        if args.include_author:
-                            comment_data["author"] = get_author_id(comment)
+                        comment_data = extract_comment_data(comment, include_author=args.include_author)
                         comments.append(comment_data)
                     post_data["comments"] = comments
 
